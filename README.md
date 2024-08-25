@@ -21,4 +21,8 @@ This repository contains the code for **Ellza**, a Mental Health Care Bot design
 3. **Run Ellza**
     ```bash
     chainlit run model.py -w
+**Note**
+    1. Running this for first time may take some time since it run on cpu of the local machine,
+    2. It may download some large files to for the model support 
+    3. Make sure the you Machine RAM is 8 Gib or More
 

@@ -3,9 +3,9 @@ from langchain.prompts import PromptTemplate
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.llms import CTransformers
-
 from langchain.chains import RetrievalQA
 import chainlit as cl
+
 
 DB_FAISS_PATH = 'vectorstore/db_faiss'
 
@@ -31,7 +31,7 @@ def set_custom_prompt():
 def retrieval_qa_chain(llm, prompt, db):
     qa_chain = RetrievalQA.from_chain_type(llm=llm,
                                        chain_type='stuff',
-                                       retriever=db.as_retriever(search_kwargs={'k': 2}),
+                                       retriever=db.as_retriever(search_kwargs={'k': 1}),
                                        return_source_documents=False,
                                        chain_type_kwargs={'prompt': prompt}
                                        )
@@ -44,8 +44,8 @@ def load_llm():
     llm = CTransformers(
         model = "TheBloke/Llama-2-7B-Chat-GGML",
         model_type="llama",
-        max_new_tokens = 512,
-        temperature = 0.5,
+        max_new_tokens = 1024,
+        temperature = 0.4
 
     )
     return llm
@@ -53,7 +53,7 @@ def load_llm():
 #QA Model Function
 def qa_bot():
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
-                                       model_kwargs={'device': 'cpu'})
+                                       model_kwargs={'device': 'cuda'})
     db = FAISS.load_local(DB_FAISS_PATH, embeddings,allow_dangerous_deserialization=True)
     llm = load_llm()
     qa_prompt = set_custom_prompt()
@@ -75,7 +75,7 @@ async def start():
     chain = qa_bot()
     msg = cl.Message(content="Starting the bot...")
     await msg.send()
-    msg.content = "Hey, I am Ellza,How can I help you"
+    msg.content = "Hey, I am Ellza,How can I help you ?"
     await msg.update()
 
     cl.user_session.set("chain", chain)
@@ -84,16 +84,22 @@ async def start():
 async def main(message: cl.Message):
     chain = cl.user_session.get("chain") 
     cb = cl.AsyncLangchainCallbackHandler(
-        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
+        stream_final_answer=False, answer_prefix_tokens=["FINAL","ANSWER"]
     )
-    cb.answer_reached = True
-    res = await chain.acall(message.content,callbacks=[cb])
-    answer = res["result"]
-    sources = res.get('source_documents', [])
+    # cb.answer_reached = True
+    # res = await chain.acall(message.content,callbacks=[cb])
+    # answer = res["result"]
 
-    if sources:
-        answer += f"\nSources:" + str(sources)
-    else:
-        answer += "\nNo sources found"
+    # await cl.Message(content=answer).send()
+    async def on_new_token(token):
+        await cl.Message(content=token).send()
 
-    await cl.Message(content=answer).send()
+    cb.on_new_token = on_new_token  # Stream each token
+
+    # Await the final result, which should be streamed token by token
+    res = await chain.acall(message.content, callbacks=[cb])
+    
+    # Ensure the final output is sent if needed
+    if not cb.answer_reached:
+        final_answer = res["result"]
+        await cl.Message(content=final_answer).send()
