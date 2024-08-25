@@ -53,7 +53,8 @@ def load_llm():
 #QA Model Function
 def qa_bot():
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2",
-                                       model_kwargs={'device': 'cuda'})
+                                       model_kwargs={'device': 'cuda'})#if you have cpu only machine the change the 'cuda' to 'cpu'
+    
     db = FAISS.load_local(DB_FAISS_PATH, embeddings,allow_dangerous_deserialization=True)
     llm = load_llm()
     qa_prompt = set_custom_prompt()
@@ -86,11 +87,6 @@ async def main(message: cl.Message):
     cb = cl.AsyncLangchainCallbackHandler(
         stream_final_answer=False, answer_prefix_tokens=["FINAL","ANSWER"]
     )
-    # cb.answer_reached = True
-    # res = await chain.acall(message.content,callbacks=[cb])
-    # answer = res["result"]
-
-    # await cl.Message(content=answer).send()
     async def on_new_token(token):
         await cl.Message(content=token).send()
 

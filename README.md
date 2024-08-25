@@ -20,9 +20,25 @@ This repository contains the code for **Ellza**, a Mental Health Care Bot design
     pip install -r requirements.txt
 3. **Run Ellza**
     ```bash
-    chainlit run model.py -w
-**Note**
-    1. Running this for first time may take some time since it run on cpu of the local machine,
-    2. It may download some large files to for the model support 
-    3. Make sure the you Machine RAM is 8 Gib or More
+    chainlit
+    chainlit run Ellza.py -w
 
+### Notes
+
+> **Note 1:** Running this for the first time may take some time since it runs on the CPU of the local machine.
+
+> **Note 2:** It download my download some large files.
+
+> **Note 3:** Make sure your machine has 8 GiB of RAM or more.
+
+> **Note 4:** It's advised to use conda langchain environment for isolated working 
+
+
+### Add Your Own Data for the RAG
+
+To add your own data to the Retrieval-Augmented Generation (RAG) system, follow these steps:
+
+1. Add your PDF file to the `data` folder.
+2. Use the following command to ingest the data:
+   ```bash
+   python3 ingest.py
